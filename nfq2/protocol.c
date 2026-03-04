@@ -1268,7 +1268,7 @@ bool QUICDefragCrypto(const uint8_t *clean,size_t clean_len, uint8_t *defrag,siz
 	size_t defrag_data_len = *defrag_len-10;
 	uint8_t ft;
 	uint64_t offset,sz,szmax=0,zeropos=0,pos=0,r1,r2;
-	bool found=false, isect;
+	bool found=false;
 	struct range64 ranges[MAX_DEFRAG_PIECES];
 	int i,j,range=0;
 
@@ -1312,32 +1312,28 @@ bool QUICDefragCrypto(const uint8_t *clean,size_t clean_len, uint8_t *defrag,siz
 	{
 		//for(i=0 ; i<range ; i++)
 		//	printf("range1 %llu-%llu\n",ranges[i].offset,ranges[i].offset+ranges[i].len);
-		do
+		for(i=range-1 ; i>=0 ; i--)
 		{
-			for(isect=false, i=range-1 ; i>=0 ; i--)
+			r1 = ranges[i].offset + ranges[i].len;
+			for(j=i-1 ; j>=0 ; j--)
 			{
-				r1 = ranges[i].offset + ranges[i].len;
-				for(j=i-1 ; j>=0 ; j--)
+				r2 = ranges[j].offset + ranges[j].len;
+				//printf("test intersect i=%d j=%d %llu-%llu %llu-%llu\n",i,j,ranges[i].offset,r1,ranges[j].offset,r2);
+				if (intersected_u64(ranges[i].offset,r1,ranges[j].offset,r2))
 				{
-					r2 = ranges[j].offset + ranges[j].len;
-					//printf("test intersect i=%d j=%d %llu-%llu %llu-%llu\n",i,j,ranges[i].offset,r1,ranges[j].offset,r2);
-					if (intersected_u64(ranges[i].offset,r1,ranges[j].offset,r2))
-					{
-						// join range
-						isect = true;
-						ranges[j].offset = MIN(ranges[i].offset, ranges[j].offset);
-						ranges[j].len = MAX(r1,r2) - ranges[j].offset;
-						// delete element i
-						memmove(ranges+i, ranges+i+1, (range-i-1)*sizeof(*ranges));
-						range--;
-						//printf("intersected %llu-%llu\n",ranges[j].offset,ranges[j].offset+ranges[j].len);
-						//for(int k=0 ; k<range ; k++)
-						//	printf("rangeX %llu-%llu\n",ranges[k].offset,ranges[k].offset+ranges[k].len);
-						break;
-					}
+					// join range
+					ranges[j].offset = MIN(ranges[i].offset, ranges[j].offset);
+					ranges[j].len = MAX(r1,r2) - ranges[j].offset;
+					// delete element i
+					memmove(ranges+i, ranges+i+1, (range-i-1)*sizeof(*ranges));
+					range--;
+					//printf("intersected %llu-%llu\n",ranges[j].offset,ranges[j].offset+ranges[j].len);
+					//for(int k=0 ; k<range ; k++)
+					//	printf("rangeX %llu-%llu\n",ranges[k].offset,ranges[k].offset+ranges[k].len);
+					break;
 				}
 			}
-		} while(isect);
+		}
 		//for(i=0 ; i<range ; i++)
 		//	printf("range2 %llu-%llu\n",ranges[i].offset,ranges[i].offset+ranges[i].len);
 
