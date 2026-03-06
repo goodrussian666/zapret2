@@ -390,7 +390,7 @@ function syndata(ctx, desync)
 			apply_fooling(desync, dis)
 			if desync.arg.tls_mod then
 				local pl = tls_mod_shim(desync, dis.payload, desync.arg.tls_mod, nil)
-				if pl then desync.payload = pl end
+				if pl then dis.payload = pl end
 			end
 			if b_debug then DLOG("syndata: "..hexdump_dlog(dis.payload)) end
 			if rawsend_dissect_ipfrag(dis, desync_opts(desync)) then
