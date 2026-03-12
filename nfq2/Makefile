@@ -14,6 +14,7 @@ CFLAGS_UBSAN = -fsanitize=undefined,alignment -fno-sanitize-recover=undefined,al
 LDFLAGS_PIE = -pie
 LDFLAGS += -flto=auto -Wl,--gc-sections $(LDFLAGS_PIE)
 LDFLAGS_ANDROID = -llog
+LDFLAGS_CYGWIN = -Wl,--build-id=none
 STRIPP=-s
 LIBS =
 LIBS_LINUX = -lz -lnetfilter_queue -lnfnetlink -lmnl -lm
@@ -157,9 +158,9 @@ bsd: $(SRC_FILES)
 	$(CC) $(STRIPP) $(CFLAGS) $(LUA_CFL) $(CFLAGS_BSD) -o dvtws2 $(SRC_FILES) $(LIBS) $(LUA_LIB) $(LIBS_BSD) $(LDFLAGS)
 
 cygwin64:
-	$(CC) $(STRIPP) $(CFLAGS) $(LUA_CFL) $(CFLAGS_CYGWIN) $(CFLAGS_CYGWIN64) -o winws2 $(SRC_FILES) $(RES_CYGWIN64) $(LIBS) $(LUA_LIB) $(LIBS_CYGWIN) $(LIBS_CYGWIN64) $(LDFLAGS)
+	$(CC) $(STRIPP) $(CFLAGS) $(LUA_CFL) $(CFLAGS_CYGWIN) $(CFLAGS_CYGWIN64) -o winws2 $(SRC_FILES) $(RES_CYGWIN64) $(LIBS) $(LUA_LIB) $(LIBS_CYGWIN) $(LIBS_CYGWIN64) $(LDFLAGS) $(LDFLAGS_CYGWIN)
 cygwin32:
-	$(CC) $(STRIPP) $(CFLAGS) $(LUA_CFL) $(CFLAGS_CYGWIN) $(CFLAGS_CYGWIN32) -o winws2 $(SRC_FILES) $(RES_CYGWIN32) $(LIBS) $(LUA_LIB) $(LIBS_CYGWIN) $(LIBS_CYGWIN32) $(LDFLAGS)
+	$(CC) $(STRIPP) $(CFLAGS) $(LUA_CFL) $(CFLAGS_CYGWIN) $(CFLAGS_CYGWIN32) -o winws2 $(SRC_FILES) $(RES_CYGWIN32) $(LIBS) $(LUA_LIB) $(LIBS_CYGWIN) $(LIBS_CYGWIN32) $(LDFLAGS) $(LDFLAGS_CYGWIN)
 cygwin: cygwin64
 
 clean:
