@@ -1116,12 +1116,9 @@ static bool parse_uid(char *opt, uid_t *uid, gid_t *gid, int *gid_count, int max
 			c = *e;
 			*e = 0;
 		}
-		if (p)
-		{
-			if (sscanf(p, "%u", &u) != 1) return false;
-			if (*gid_count >= max_gids) return false;
-			gid[(*gid_count)++] = (gid_t)u;
-		}
+		if (sscanf(p, "%u", &u) != 1) return false;
+		if (*gid_count >= max_gids) return false;
+		gid[(*gid_count)++] = (gid_t)u;
 		if (e) *e++ = c;
 		p = e;
 	}
