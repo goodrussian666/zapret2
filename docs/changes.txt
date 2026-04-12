@@ -280,3 +280,7 @@ v0.9.4.3
 0.9.4.7
 
 * nfqws2: do not fail tls_mod if dupsid,rndsni,padencap fail
+
+0.9.5
+
+* nfqws2: timers

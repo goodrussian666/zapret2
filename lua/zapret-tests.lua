@@ -15,7 +15,7 @@ end
 function test_all(...)
 	test_run({
 		test_crypto, test_bin, test_time, test_gzip, test_ipstr, test_dissect, test_csum, test_resolve,
-		test_get_source_ip, test_ifaddrs, test_rawsend},...)
+		test_get_source_ip, test_ifaddrs, test_rawsend, test_timer},...)
 end
 
 
@@ -906,6 +906,23 @@ function test_ifaddrs(opts)
 		end
 	end
 end
+
+function timer1(name, data)
+	print("timer "..name.." fired. data="..tostring(data))
+end
+function timer2(name, data)
+	data.n = data.n+1
+	print("timer "..name.." fired. data.n="..tostring(data.n))
+	if data.n>=3 then
+		timer_del(name)
+	end
+end
+function test_timer(opts)
+	timer_set("t1","timer1",500,true,"sample_data");
+	tbl = {n=0}
+	timer_set("t2","timer2",700,false,tbl);
+end
+
 
 function test_rawsend(opts)
 	print("* rawsend")

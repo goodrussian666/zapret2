@@ -3787,6 +3787,60 @@ static int luacall_timegm(lua_State *L)
 	return 1;
 }
 
+static int luacall_timer_set(lua_State *L)
+{
+	// timer_set(name, func, period, oneshot, data)
+	lua_check_argc_range(L,"timer_set",3,5);
+
+	LUA_STACK_GUARD_ENTER(L)
+
+	int argc=lua_gettop(L);
+	const char *name =  luaL_checkstring(L,1);
+	const char *func =  luaL_checkstring(L,2);
+	lua_Integer period = luaL_checkinteger(L,3);
+	if (period<10) luaL_error(L,"invalid timer period. must be >=10 ms");
+	bool oneshot = argc>=4 && lua_toboolean(L,4);
+
+	lua_getglobal(L, func);
+	bool is_f = lua_isfunction(L, -1);
+	lua_pop(L, 1);
+	if (!is_f) luaL_error(L, "timer function '%s' does not exist", func);
+
+	timer_pool *timer = TimerPoolSearch(params.timers, name);
+	if (timer) luaL_error(L,"timer '%s' already present", name);
+
+	timer = TimerPoolAdd(&params.timers, name, func, period, oneshot);
+	if (!timer) luaL_error(L,"could not create timer");
+
+	if (argc>=5)
+	{
+		lua_pushvalue(L, 5);
+		timer->lua_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	}
+	DLOG("timer: '%s' created. function '%s' period %llu oneshot %u\n", timer->str, timer->func, timer->period, timer->oneshot);
+
+	LUA_STACK_GUARD_RETURN(L,0)
+}
+static int luacall_timer_del(lua_State *L)
+{
+	// timer_del(name)
+	lua_check_argc(L,"timer_del",1);
+
+	LUA_STACK_GUARD_ENTER(L)
+
+	const char *name =  luaL_checkstring(L,1);
+	timer_pool *timer = TimerPoolSearch(params.timers, name);
+	if (timer)
+	{
+		DLOG("timer: '%s' deleted\n", timer->str);
+		TimerPoolDel(&params.timers, timer);
+	}
+	else
+		DLOG("timer: '%s' not found\n", timer->str);
+	lua_pushboolean(L, !!timer);
+	LUA_STACK_GUARD_RETURN(L,1)
+}
+
 // ----------------------------------------
 
 void lua_cleanup(lua_State *L)
@@ -3794,6 +3848,8 @@ void lua_cleanup(lua_State *L)
 	lua_desync_ctx_destroy(L);
 	// conntrack holds lua state. must clear it before lua shoudown
 	ConntrackPoolDestroy(&params.conntrack);
+	// timer can hold custom lua object
+	TimerPoolDestroy(&params.timers);
 }
 
 void lua_shutdown()
@@ -4438,7 +4494,11 @@ static void lua_init_functions(void)
 		{"localtime",luacall_localtime},
 		{"gmtime",luacall_gmtime},
 		{"timelocal",luacall_timelocal},
-		{"timegm",luacall_timegm}
+		{"timegm",luacall_timegm},
+
+		// timers
+		{"timer_set",luacall_timer_set},
+		{"timer_del",luacall_timer_del}
 	};
 	for(int i=0;i<(sizeof(lfunc)/sizeof(*lfunc));i++)
 		lua_register(params.L,lfunc[i].name,lfunc[i].f);

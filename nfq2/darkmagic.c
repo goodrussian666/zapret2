@@ -1627,13 +1627,32 @@ static bool windivert_recv_exit(void)
 	}
 	return false;
 }
-static bool windivert_recv_filter(HANDLE hFilter, uint8_t *packet, size_t *len, WINDIVERT_ADDRESS *wa, unsigned int *wa_count)
+static DWORD win_timer_check(t_timer_callback timer_callback, uint64_t *bt_prev)
+{
+	uint64_t bt,dbt;
+
+	bt = boottime_ms();
+	dbt = bt-*bt_prev;
+	if (dbt>=params.timer_res)
+	{
+		timer_callback(bt);
+
+		*bt_prev = bt;
+		return params.timer_res;
+	}
+	else
+		return params.timer_res-(int)dbt;
+}
+
+static bool windivert_recv_filter(HANDLE hFilter, uint8_t *packet, size_t *len, WINDIVERT_ADDRESS *wa, unsigned int *wa_count, t_timer_callback timer_callback, uint64_t *bt_prev)
 {
 	UINT recv_len;
-	DWORD rd;
+	DWORD rd,twait,tmax;
 	unsigned int wac;
 
 	if (windivert_recv_exit()) return false;
+
+	tmax = win_timer_check(timer_callback, bt_prev);
 
 	wac = *wa_count * sizeof(WINDIVERT_ADDRESS);
 	if (WinDivertRecvEx(hFilter, packet, *len, &recv_len, 0, wa, &wac, &ovl))
@@ -1647,10 +1666,16 @@ static bool windivert_recv_filter(HANDLE hFilter, uint8_t *packet, size_t *len, 
 	switch(w_win32_error)
 	{
 		case ERROR_IO_PENDING:
-			// make signals working
-			while (WaitForSingleObject(ovl.hEvent,50)==WAIT_TIMEOUT)
+			// need to check for signals periodically
+			for(;;)
 			{
-				if (windivert_recv_exit()) return false;
+				twait = tmax>50 ? 50 : tmax;
+				tmax -= twait;
+				// make signals working
+				if (WaitForSingleObject(ovl.hEvent,twait)!=WAIT_TIMEOUT) break;
+				if (windivert_recv_exit())
+					return false;
+				if (!tmax) tmax = win_timer_check(timer_callback, bt_prev);
 			}
 			if (!GetOverlappedResult(hFilter,&ovl,&rd,FALSE))
 			{
@@ -1675,9 +1700,9 @@ cancel:
 	GetOverlappedResult(hFilter, &ovl, &rd, TRUE);
 	return false;
 }
-bool windivert_recv(uint8_t *packet, size_t *len, WINDIVERT_ADDRESS *wa, unsigned int *wa_count)
+bool windivert_recv(uint8_t *packet, size_t *len, WINDIVERT_ADDRESS *wa, unsigned int *wa_count, t_timer_callback timer_callback, uint64_t *bt_prev)
 {
-	return windivert_recv_filter(w_filter,packet,len,wa,wa_count);
+	return windivert_recv_filter(w_filter,packet,len,wa,wa_count,timer_callback,bt_prev);
 }
 
 static bool windivert_send_filter(HANDLE hFilter, const uint8_t *packet, size_t len, const WINDIVERT_ADDRESS *wa)

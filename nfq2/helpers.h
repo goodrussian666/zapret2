@@ -122,6 +122,7 @@ bool parse_int16(const char *p, int16_t *v);
 #endif
 
 time_t boottime(void);
+uint64_t boottime_ms(void);
 
 #ifdef __CYGWIN__
 uint32_t mask_from_bitcount(uint32_t zct);

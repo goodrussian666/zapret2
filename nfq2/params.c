@@ -559,6 +559,7 @@ void cleanup_params(struct params_s *params)
 	ipcacheDestroy(&params->ipcache);
 	blob_collection_destroy(&params->blobs);
 	strlist_destroy(&params->lua_init_scripts);
+	TimerPoolDestroy(&params->timers);
 
 #ifdef __CYGWIN__
 	strlist_destroy(&params->ssid_filter);
@@ -587,6 +588,7 @@ void init_params(struct params_s *params)
 	params->ctrack_t_fin = CTRACK_T_FIN;
 	params->ctrack_t_udp = CTRACK_T_UDP;
 	params->ipcache_lifetime = IPCACHE_LIFETIME;
+	params->timer_res = TIMER_RES_DEFAULT;
 	params->lua_gc = LUA_GC_INTERVAL;
 
 	LIST_INIT(&params->hostlists);

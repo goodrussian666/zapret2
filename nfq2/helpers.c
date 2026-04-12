@@ -739,6 +739,14 @@ time_t boottime(void)
 	struct timespec ts;
 	return clock_gettime(CLOCK_BOOT_OR_UPTIME, &ts) ? 0 : ts.tv_sec;
 }
+uint64_t boottime_ms(void)
+{
+	struct timespec ts;
+	if (clock_gettime(CLOCK_BOOT_OR_UPTIME, &ts))
+		return 0;
+	else
+		return ts.tv_sec*1000ULL + ts.tv_nsec/1000000;
+}
 
 
 #ifdef __CYGWIN__

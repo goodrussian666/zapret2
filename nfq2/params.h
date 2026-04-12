@@ -7,6 +7,7 @@
 #include "protocol.h"
 #include "helpers.h"
 #include "sec.h"
+#include "timer.h"
 
 #include <sys/param.h>
 #include <sys/types.h>
@@ -35,6 +36,8 @@
 #define HOSTLIST_AUTO_UDP_IN			1
 
 #define IPCACHE_LIFETIME		7200
+
+#define TIMER_RES_DEFAULT		50
 
 #define MAX_GIDS 64
 
@@ -191,6 +194,9 @@ struct params_s
 	struct str_list_head lua_init_scripts;
 	bool writeable_dir_enable;
 	char writeable_dir[PATH_MAX];
+
+	int timer_res; // timer resolution in msec
+	timer_pool *timers;
 
 	int lua_gc;
 	int ref_desync_ctx; // desync ctx userdata registry ref
