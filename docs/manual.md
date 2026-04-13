@@ -2593,7 +2593,7 @@ function timer_set(name, func, period, oneshot, data)
 
 #### timer_del
 
-Удалить таймер.
+Удалить таймер. Текущая функция не прерывается, но последующих вызовов не будет.
 
 ```
 function timer_del(name)
